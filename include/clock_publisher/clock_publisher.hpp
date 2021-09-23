@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #ifndef CLOCK_PUBLISHER_CLOCK_PUBLISHER_H
-#define CLOCK_PUBLISHER_CLOCK_PUBLISHER_H 
+#define CLOCK_PUBLISHER_CLOCK_PUBLISHER_H
 
 #include <string>
 
 #include <rclcpp/rclcpp.hpp>
 
 #include <rosgraph_msgs/msg/clock.hpp>
+#include "autoware_vehicle_msgs/msg/engage.hpp"
 
 // Create enum with ok and warn types
 
@@ -33,6 +34,12 @@ private:
   void onTimer();
   rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr clock_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::Subscription<autoware_vehicle_msgs::msg::Engage>::SharedPtr engage_sub_;
+
+  rosgraph_msgs::msg::Clock clock_;
+  int rate_;
+  bool flag_ = true;
+  void onTrigger(const autoware_vehicle_msgs::msg::Engage::ConstSharedPtr msg) { flag_ = !flag_; }
 };
 
 #endif

@@ -18,22 +18,27 @@
 
 void ClockPublisher::onTimer()
 {
-  rosgraph_msgs::msg::Clock clock;
-  clock.clock = this->now();
-  // std::cerr << std::fixed << rclcpp::Time(clock.clock).seconds() << std::endl;
-  clock_pub_->publish(clock); 
+  if (flag_) {
+    const double dt_sec = 1.0 / static_cast<double>(rate_);
+    clock_.clock = rclcpp::Time(clock_.clock) + rclcpp::Duration::from_seconds(dt_sec);
+    // std::cerr << std::fixed << rclcpp::Time(clock_.clock).seconds() << std::endl;
+    clock_pub_->publish(clock_);
+  }
 }
 
 ClockPublisher::ClockPublisher(const rclcpp::NodeOptions & node_options)
 : Node("clock_publisher", node_options)
 {
   clock_pub_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/clock", 1);
-  const int rate = this->declare_parameter("rate", 200);
+  rate_ = this->declare_parameter("rate", 200);
+
+  engage_sub_ = create_subscription<autoware_vehicle_msgs::msg::Engage>(
+    "/vehicle/engage", 1, std::bind(&ClockPublisher::onTrigger, this, std::placeholders::_1));
 
   // Timer
   auto timer_callback = std::bind(&ClockPublisher::onTimer, this);
   auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
-    std::chrono::duration<double>(1.0/static_cast<double>(rate)));
+    std::chrono::duration<double>(1.0 / static_cast<double>(rate_)));
 
   timer_ = std::make_shared<rclcpp::GenericTimer<decltype(timer_callback)>>(
     this->get_clock(), period, std::move(timer_callback),
